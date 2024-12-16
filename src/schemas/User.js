@@ -1,0 +1,32 @@
+/**!SECTION
+ * @schema User
+ * @description Represents a user in the database
+ * @property {string} DiscordId - The Discord ID of the user
+ * @property {string} Username - The username of the user
+ * @property {string} Hash - The hashed password of the user
+ * @property {string} Salt - The salt used to hash the password
+ * @property {object} discordTokens - The Discord tokens for the user
+ * @property {string} discordTokens.access_token - The access token for the user
+ * @property {string} discordTokens.refresh_token - The refresh token for the user
+ * @property {number} discordTokens.expires_in - The expiration time for the access token
+ * @property {number} discordTokens.expires_at - The expiration time for the access token in milliseconds
+ * @property {object} UnitsMod - the units the user has access to 
+ * @property {object} Units - the units the user in is
+ * 
+ */
+
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const User = new Schema({
+    DiscordId: {type: String},
+    Username: {type: String, required: true},
+    Email: {type: String, required: true},
+    Hash: {type: String},
+    Salt: {type: String},
+    
+    UnitsMod: {type: Object},
+    Units: {type: Object}
+});
+
+module.exports = mongoose.model('User', User);
