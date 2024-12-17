@@ -17,6 +17,7 @@ const { Client } = require('discord.js');
 const bodyParser = require("body-parser");
 const path = require('path');
 var app = express();
+const Users = require('./schemas/User.js');
 
 
 
@@ -109,13 +110,12 @@ app.listen(process.env.PORT || 5000,"0.0.0.0", async () => {
   
   
   if(process.env.NODE_ENV == "production"){
-  bot.login(token);}
+  bot.login(process.env.token);}
   
   bot.on('guildDelete', async (guild) => {
     const serverData = await Server.findOne({ DiscordId: guild.id });
-    if (serverData) {
-        console.log(`Deleted data associated with guild ${guild.name} (${guild.id}) from the database.`);
-        await Server.updateOne({ DiscordId: guild.id }, { $unset: { DiscordId: 1, QuestLogs:1, QuestRoleId:1, AdminRoleId:1, MagicLogs:1,ModRoleId:1 } });
+    if(serverData){
+      await serverData.deleteOne();
     }
 }); 
 
@@ -323,7 +323,9 @@ function restrictDev(req, res, next) {
     return res.redirect('/login/1942');
   }
 }
-
+app.get('/login', function(req, res){
+  res.render('auth/login');
+});
 
 
 
@@ -376,7 +378,7 @@ app.get('/api/user/Logged',function(req,res){
     res.send(req.session.user);
   }
   else{
-    res.send('noUser');
+    res.send({Result:'noUser'});
   }
 });
 
@@ -401,11 +403,7 @@ app.get('/logout', function(req, res){
 });
 
 
-app.get('/login/:typeing', function(req, res){
-  var type = req.params.typeing;
-  
 
-});
 
 
 app.get('/register', function(req, res){
@@ -428,6 +426,17 @@ app.post('/login', function (req, res, next) {
       // to prevent fixation
 	    
       req.session.regenerate(function(){
+
+        req.session.user = user;
+        req.session.success = 'Authenticated as ' + user.Username;
+        return res.redirect('/');
+      });
+    }
+    else {
+      req.session.error = 'Authentication failed, please check your '
+        + ' username and password.';
+      return res.redirect('/login');
+    }
         
     
     
@@ -436,9 +445,7 @@ app.post('/login', function (req, res, next) {
 
 
 
-    });
-    }) 
-
+);
 
 
 app.post('/register',  function (req, res, next) {
