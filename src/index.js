@@ -106,7 +106,7 @@ app.listen(process.env.PORT || 5000,"0.0.0.0", async () => {
  console.info(`[Express] Listening on port ${Port}`);
   
  
-  await Mongo();
+  
   
   if(process.env.NODE_ENV == "production"){
   bot.login(token);}

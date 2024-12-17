@@ -131,7 +131,10 @@ module.exports = {
    
     
     register: register,
-    updateMetadata: updateMetadata,
+    addTimeToDate: addTimeToDate,
+    sleep: sleep,
+    
+
     
 
 
