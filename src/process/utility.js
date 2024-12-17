@@ -5,9 +5,9 @@
 //
 
 const bkfd2Password = require("pbkdf2-password");
-const storage = require("../storage.js");
-const discord = require("../discordAuth.js");
-const Users = require("../schemas/User.js");
+
+const Users = require('../schemas/User.js');
+const mongoose = require('mongoose');
 
 
 
@@ -86,31 +86,27 @@ async function register(username, password,email ,fn) {
       // store user in db
       var user = await Users.findOne({Username: username, Email: email});
         if(!user){
-          console.log("no user found");
-          return fn(new Error('no user found go join a server to create an account'));}
+          hash({ password: password }, async function (err, pass, salt, hash) {
+            if (err) return fn(new Error(err));
+            // store the salt & hash in the "db"
+      
+            Users.create({Username: username, Hash: hash, Salt: salt, Email: email}).then((user) => {
+                console.log("user created");
+                fn(null, user);
+            }
+            );
+              
+              
+        
+        });
+      }
+          
   
-        if(user.Salt){
+        else if(user.Salt){
           console.log("user already registered");
           return fn(new Error('user already registered'));
         }
-        else{
-            // create a user
-  
-      hash({ password: password }, async function (err, pass, salt, hash) {
-        if (err) return fn(new Error(err));
-        // store the salt & hash in the "db"
-  
-        Users.Create({Username: username, Hash: hash, Salt: salt, Email: email}).then((user) => {
-            console.log("user created");
-            fn(null, user);
-        }
-        );
-          
-          
-    
-    });
-        }
-      
+        
   
       //return
       

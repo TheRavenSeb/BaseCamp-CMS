@@ -407,7 +407,7 @@ app.get('/logout', function(req, res){
 
 
 app.get('/register', function(req, res){
-  res.render('register');
+  res.render('auth/register');
 });
 
 

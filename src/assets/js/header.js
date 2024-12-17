@@ -27,10 +27,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         .then(data => {
             if (data.Result === "noUser") {
                 console.log("No user found");
-                return;
-            }
+                vars.user = null;
+                
+            }else{
             vars.user = data;
             console.log(data);
+            }
         }
 
         )
@@ -53,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         else{
             $('#header').append(`<div class="col-md-3 text-end">
         <button type="button" class="btn btn-outline-primary me-2" ><a href="/login">Login</a></button>
-        <button type="button" class="btn btn-primary">Sign-up</button>
+        <button type="button" class="btn btn-primary"><a href ="/register">Sign-Up</a></button>
       </div>`);
             
         }
