@@ -19,14 +19,24 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const User = new Schema({
-    DiscordId: {type: String},
+    DiscordId: {type: String,default: null},
     Username: {type: String, required: true},
     Email: {type: String, required: true},
     Hash: {type: String},
     Salt: {type: String},
     
     UnitsMod: {type: Object},
-    Units: {type: Object}
+    Units: {type: Object},
+    isDarkmode: {type: Boolean, default: false},
+    discordTokens: {
+        access_token: {type: String},
+        refresh_token: {type: String},
+        expires_in: {type: Number},
+        expires_at: {type: Number}
+    }
+}, {
+    timestamps: true
+
 });
 
 module.exports = mongoose.model('User', User);

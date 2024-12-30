@@ -121,7 +121,19 @@ async function register(username, password,email ,fn) {
  * @param {string} userId 
  */    
 
-            
+async function checkAuth(hash, username){
+  try{
+    let user = await Users.findOne({Username: username});
+    if(user.Hash === hash){
+      return true;
+    }
+    return false;
+  }
+  catch(err){
+    console.log(err);
+  }
+}
+
 
 module.exports = {
    
@@ -129,6 +141,7 @@ module.exports = {
     register: register,
     addTimeToDate: addTimeToDate,
     sleep: sleep,
+    checkAuth: checkAuth
     
 
     

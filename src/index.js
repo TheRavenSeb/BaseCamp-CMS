@@ -174,15 +174,18 @@ app.use(bodyParser.json())
 
 
 app.use(express.urlencoded({ extended: false }))
+// Session configuration
 app.use(session({
-  resave: false, // don't save session if unmodified
-  saveUninitialized: false, // don't create session until something stored
-  secret: 'shhhh, very secret'
+  secret: 'nvvorovlkdevfjvohvek jbvevdnevjdcvhebvddvdklkjhbslcsdlkjvdfodcodsihvcbjdncsoidcvhsjcneoi843834903874874050475034750980434073sdnfdcb- hfehvhescscvpipsijdbvpiapviapibv', // Replace with a strong secret
+  resave: false,
+ 
   
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 30 * 60 * 1000 // 30 minutes
+    
+  }
 }));
-app.use(cookieParser(
-  'shhhh, very secret'
-));
 
 var UN = "";
 // Session-persisted message middleware
@@ -313,6 +316,7 @@ function restrictUserByAuth(req, res, next) {
 }
 
 
+
 function restrictDev(req, res, next) {
 
   if (req.session.user) {
@@ -410,7 +414,20 @@ app.get('/register', function(req, res){
   res.render('auth/register');
 });
 
+app.post('/api/user/darkmode', function(req, res){
+  if(req.session && req.session.user){
 
+    Users.findOne({Username: req.session.user.Username}).then((user) => {
+      user.isDarkmode = req.body.isDarkmode;
+      user.save();
+      res.send({Result: "success"});
+    })
+  }
+  else{
+    res.send({Result: "noUser"});
+  }
+
+});
 
 
 
