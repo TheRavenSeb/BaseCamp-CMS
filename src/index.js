@@ -1,6 +1,5 @@
-
 // convert above to require 
-const cookieParser = require('cookie-parser');
+
 
 const {addHours, addMinutes, addSeconds, addDays, addWeeks, addMonths, addYears} = require('date-fns');
 
@@ -15,6 +14,7 @@ const { Client } = require('discord.js');
 
 
 const bodyParser = require("body-parser");
+const cookieParser = require('cookie-parser');
 const path = require('path');
 var app = express();
 const Users = require('./schemas/User.js');
@@ -80,7 +80,31 @@ Object.prototype.insert = function(key, value) {
 
 
 
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }
+}));
+// logout session after a certain period of time
+app.use((req, res, next) => {
+  if (req.session) {
+    req.session._garbage = Date();
+    req.session.touch();
+  }
+  next();
+});
 
+//uses ejs 
+app.set('view engine', 'ejs');
+app.engine('ejs', require('ejs').__express);
+app.set('views', path.join(__dirname, 'views'));
+app.use('/css', express.static(path.join(__dirname, 'assets/css')));
+app.use('/js', express.static(path.join(__dirname, 'assets/js')));
+app.use('/img', express.static(path.join(__dirname, 'assets/images')));
 
 var Port = 8080;
 
@@ -125,16 +149,62 @@ app.listen(process.env.PORT || 5000,"0.0.0.0", async () => {
 
 
 });
-  
-    
-     
 
 
+app.post('/register', async (req, res) => {
+  const { username, password, email, ingameName, avatar, steamId } = req.body;
+  try {
+    utility.register(username, password, email, ingameName, steamId, async (err, user) => {
+      if (err) {
+        req.session.error = err.message;
+        return res.redirect('/register');
+      }
+      if (user) {
+        user.Avatar = avatar;
+        await user.save();
+        req.session.user = user;
+        req.session.success = 'User registered successfully';
+        return res.redirect('/login');
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    req.session.error = 'An error occurred during registration';
+    return res.redirect('/register');
+  }
+});
 
+app.get('/register', (req, res) => {
+  res.render('auth/register', { message: req.session.message || '' });
+});
 
+app.get('/login', (req, res) => {
+  res.render('auth/login', { message: req.session.message || '' });
+});
 
-
-
+app.post('/login', async (req, res) => {
+  const { username, password, email } = req.body;
+  try {
+    authenticate(username, password, email, (err, user) => {
+      if (err) {
+        req.session.error = err.message;
+        return res.redirect('/login');
+      }
+      if (user) {
+        req.session.user = user;
+        req.session.success = 'User logged in successfully';
+        return res.redirect('/');
+      } else {
+        req.session.error = 'Invalid username, password, or email';
+        return res.redirect('/login');
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    req.session.error = 'An error occurred during login';
+    return res.redirect('/login');
+  }
+});
 
 
 
@@ -466,7 +536,7 @@ app.post('/login', function (req, res, next) {
 
 
 app.post('/register',  function (req, res, next) {
-  utility.register(req.body.username, req.body.password, req.body.email, function(err, user){
+  utility.register(req.body.username, req.body.password, req.body.email, req.body.ingameName, req.body.steamId, function(err, user){
     if (err) {
       req.session.error = 'Registration failed: ' + err;
       return res.redirect('/register');

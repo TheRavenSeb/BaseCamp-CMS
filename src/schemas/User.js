@@ -10,7 +10,6 @@
  * @property {string} discordTokens.refresh_token - The refresh token for the user
  * @property {number} discordTokens.expires_in - The expiration time for the access token
  * @property {number} discordTokens.expires_at - The expiration time for the access token in milliseconds
- * @property {object} UnitsMod - the units the user has access to 
  * @property {object} Units - the units the user in is
  * 
  */
@@ -21,13 +20,13 @@ const Schema = mongoose.Schema;
 const User = new Schema({
     DiscordId: {type: String,default: null},
     Username: {type: String, required: true},
+    IngameName: {type: String, default: ""},
     Email: {type: String, required: true},
     Hash: {type: String},
     Salt: {type: String},
-    
-    UnitsMod: {type: Object},
-    Units: {type: Object},
+    Units: {type: Object},// these are guilds 
     isDarkmode: {type: Boolean, default: false},
+    SteamId: {type: String, default: ""},
     discordTokens: {
         access_token: {type: String},
         refresh_token: {type: String},

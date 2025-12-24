@@ -40,9 +40,27 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         )
-    // if the user is logged in, display the user's profile picture and username
+        
+   
+    
+    //set the theme to the user's preference
         if(vars.user !== null){
-
+            if(vars.user.isDarkmode){
+            var element = document.body;
+            element.classList.toggle("dark-mode");
+            //change icon to sun
+            
+            $("#lightmode").innerHTML = `<img src="http://${vars.host}/img/brightness.png" alt="sun" width="32" height="32" class="rounded-circle">`;
+            $("#lightmode").id = "lightmode";
+        }
+        else{
+            
+            //change $("#lightmode") to sun
+            
+            $("#lightmode").innerHTML = `<img src="http://${vars.host}/img/night-mode.png" alt="sun" width="32" height="32" class="rounded-circle">`;
+            $("#lightmode").id = "darkmode";
+        }
+// if the user is logged in, display the user's profile picture and username
             $('#header').append(`<div class="dropdown text-end">
           <a href="#" class="d-block link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
             <img src="https://github.com/mdo.png" alt="mdo" width="32" height="32" class="rounded-circle">
@@ -116,7 +134,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                   'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                  isDarkmode: true  
+                  isDarkmode: false  
               })
           })
           .then(response => response.json())
@@ -136,24 +154,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   });
 
-    // set the theme to the user's preference
-    if(vars.user !== null){
-        if(vars.user.isDarkmode){
-            var element = document.body;
-            element.classList.toggle("dark-mode");
-            //change icon to sun
-            
-            $("#lightmode").innerHTML = `<img src="http://${vars.host}/img/brightness.png" alt="sun" width="32" height="32" class="rounded-circle">`;
-            $("#lightmode").id = "lightmode";
-        }
-        else{
-            
-            //change $("#lightmode") to sun
-            
-            $("#lightmode").innerHTML = `<img src="http://${vars.host}/img/night-mode.png" alt="sun" width="32" height="32" class="rounded-circle">`;
-            $("#lightmode").id = "darkmode";
-        }
-    }
+    
 
 
 

@@ -77,11 +77,20 @@ function addTimeToDate(addedTime, date){
  * @param {function} fn
  * @returns {fn} - Returns an error if the user is already registered, otherwise returns the user.
  */
-async function register(username, password,email ,fn) {
+async function register(username, password,email, ingameName,  steamId, fn) {
     try{
       console.log("registering user");
   
-  
+      if(!username || !password || !email){
+        return fn(new Error('Missing required fields'));
+      }
+      else if(!ingameName){
+        return fn(new Error('Missing required fields'));
+      }
+      else if(!steamId){
+        steamId = "";
+      }
+      
       //check is user already registered 
       // store user in db
       var user = await Users.findOne({Username: username, Email: email});
@@ -90,7 +99,7 @@ async function register(username, password,email ,fn) {
             if (err) return fn(new Error(err));
             // store the salt & hash in the "db"
       
-            Users.create({Username: username, Hash: hash, Salt: salt, Email: email}).then((user) => {
+            Users.create({Username: username, Hash: hash, Salt: salt, Email: email, IngameName: ingameName, SteamId: steamId}).then((user) => {
                 console.log("user created");
                 fn(null, user);
             }
@@ -121,9 +130,10 @@ async function register(username, password,email ,fn) {
  * @param {string} userId 
  */    
 
-async function checkAuth(hash, username){
+async function checkAuth(hash, username, email){
   try{
     let user = await Users.findOne({Username: username});
+    if(!user) user = await Users.findOne({Email: email});
     if(user.Hash === hash){
       return true;
     }
@@ -134,10 +144,28 @@ async function checkAuth(hash, username){
   }
 }
 
+async function authenticate(username, password, email, fn) {
+  try {
+    let user = await Users.findOne({Username: username});
+    if(!user) user = await Users.findOne({Email: email});
+    if(!user) return fn('User not found you may not be registered', null);
+    hash({ password: password, salt: user.Salt }, function (err, pass, salt, hash) {
+      if (err) return fn('An error occurred during authentication', null);
+      if (hash === user.Hash) {
+        return fn(null, user);
+      } else {
+        return fn('Invalid password',null);
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    return fn('An error occurred during authentication', null);
+  }
+}
+
 
 module.exports = {
-   
-    
+    authenticate: authenticate,
     register: register,
     addTimeToDate: addTimeToDate,
     sleep: sleep,
