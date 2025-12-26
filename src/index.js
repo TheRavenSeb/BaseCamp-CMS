@@ -18,6 +18,8 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 var app = express();
 const Users = require('./schemas/User.js');
+const community = require("./schemas/community.js")
+const Division = require("./schemas/Divisions.js")
 
 
 
@@ -33,7 +35,7 @@ const eventFiles = fs.readdirSync(eventDir).filter(file => file.endsWith(".js"))
 const commandsDir = path.join(__dirname, 'commands')
 const commandFolders = fs.readdirSync(commandsDir).filter(file => file.endsWith(".js"));
 
-
+require('dotenv').config();
 
 
 
@@ -112,7 +114,9 @@ var Port = 8080;
 const { GatewayIntentBits, EmbedBuilder,Collection } = require("discord.js");
 const Discord = require("discord.js");
 
-const token = process.env.D_TOKEN;
+
+
+
 const bot = new Discord.Client({ intents: [GatewayIntentBits.GuildMembers, GatewayIntentBits.Guilds ] });
 
 
@@ -127,17 +131,92 @@ module.bot = bot;
 
 
 
+
+bot.on("guildMemberAdd", async (member) => {
+  console.log(`New member joined: ${member.user.tag}`);
+
+});
+
+bot.on("guildMemberRemove", async (member) => {
+  console.log(`Member left: ${member.user.tag}`);
+ await Users.findOne({ DiscordId: member.user.id.toString() }).then(user => {
+   if (user) {
+    var unit = user.Units.find(unit => unit.GuildId !== member.guild.id.toString());
+    if (unit) {
+      user.Units = user.Units.filter(u => u.GuildId !== member.guild.id.toString());
+      user.markModified('Units');
+      user.save().then(() => {
+        console.log(`Removed unit ${unit.Name} from user ${user.Username}`);
+      }).catch(err => {
+        console.error(`Error removing unit ${unit.Name} from user ${user.Username}:`, err);
+      });
+    }
+   }
+   }).catch(err => {
+     console.error(`Error finding user with Discord ID ${member.user.id.toString()}:`, err);
+   });
+   });
+
+
+
+
+
+
+
+bot.on("guildCreate", async (guild) => {
+  console.log(`Joined new guild: ${guild.name}`);
+
+  // create an infinite invite link for the guild
+  var defaultChannel = guild.channels.cache.find(channel => channel.type === 0 );
+  console.log(`Default channel for guild ${guild.name}: ${defaultChannel}`);
+  guild.invites.create(defaultChannel.id,{ maxAge: 0, maxUses: 0 ,reason: "BaseCamp CMS Invite Generator"}).then(invite => {
+    console.log(`Created an infinite invite link for guild: ${guild.name} - ${invite.url}`);
+  
+  
+
+  community.findOne({ GuildId: guild.id }).then(server => {
+    if (!server) {
+      community.create({
+        GuildId: guild.id,
+        Name: guild.name,
+        Owner: guild.ownerId,
+        Description: "No description provided",
+        DiscordInvite: invite.url
+      }).then(() => {
+        console.log(`New community created for guild: ${guild.name}`);
+      }).catch(err => {
+        console.error(`Error creating community for guild: ${guild.name}`, err);
+      });
+    }
+    });
+    }).catch(err => {
+    console.error(`Error creating invite link for guild: ${guild.name}`, err);
+  });
+  });
+
+
+
+
+
+
+
+
+
+
+
+
+
 app.listen(process.env.PORT || 5000,"0.0.0.0", async () => {
  console.info(`[Express] Listening on port ${Port}`);
   
  
+  bot.login(process.env.token);
   
-  
-  if(process.env.NODE_ENV == "production"){
-  bot.login(process.env.token);}
+  /*if(process.env.NODE_ENV == "production"){
+  bot.login(process.env.token);}*/
   
   bot.on('guildDelete', async (guild) => {
-    const serverData = await Server.findOne({ DiscordId: guild.id });
+    const serverData = await community.findOne({ DiscordId: guild.id });
     if(serverData){
       await serverData.deleteOne();
     }
@@ -148,63 +227,6 @@ app.listen(process.env.PORT || 5000,"0.0.0.0", async () => {
 
 
 
-});
-
-
-app.post('/register', async (req, res) => {
-  const { username, password, email, ingameName, avatar, steamId } = req.body;
-  try {
-    utility.register(username, password, email, ingameName, steamId, async (err, user) => {
-      if (err) {
-        req.session.error = err.message;
-        return res.redirect('/register');
-      }
-      if (user) {
-        user.Avatar = avatar;
-        await user.save();
-        req.session.user = user;
-        req.session.success = 'User registered successfully';
-        return res.redirect('/login');
-      }
-    });
-  } catch (err) {
-    console.log(err);
-    req.session.error = 'An error occurred during registration';
-    return res.redirect('/register');
-  }
-});
-
-app.get('/register', (req, res) => {
-  res.render('auth/register', { message: req.session.message || '' });
-});
-
-app.get('/login', (req, res) => {
-  res.render('auth/login', { message: req.session.message || '' });
-});
-
-app.post('/login', async (req, res) => {
-  const { username, password, email } = req.body;
-  try {
-    authenticate(username, password, email, (err, user) => {
-      if (err) {
-        req.session.error = err.message;
-        return res.redirect('/login');
-      }
-      if (user) {
-        req.session.user = user;
-        req.session.success = 'User logged in successfully';
-        return res.redirect('/');
-      } else {
-        req.session.error = 'Invalid username, password, or email';
-        return res.redirect('/login');
-      }
-    });
-  } catch (err) {
-    console.log(err);
-    req.session.error = 'An error occurred during login';
-    return res.redirect('/login');
-  }
-});
 
 
 
@@ -306,58 +328,6 @@ app.use(function(req, res, next){
       return res.sendStatus(403);
     }
    }
-// Authenticate using our plain-object database of doom!
-/**
- * 
- * @param {String} name 
- * @param {String} pass 
- * @param {Function} fn 
- */
-function authenticate(name, pass,email, fn) {
-  try{
-  if (!module.main) console.info('authenticating user', {user: name});
-  if(name){
-  Users.findOne({Username: name}).then((user) => {
-  // query the db for the given username
-  if (!user) return fn(null, null)
-
-  
-  // apply the same algorithm to the POSTed password, applying
-  // the hash against the pass / salt, if there is a match we
-  // found the user
-  
-  hash({ password: pass, salt: user.Salt }, function (err, pass, salt, hash) {
-    if (err) return fn(err);
-    if (hash === user.Hash) {
-      
-      return fn(null, user) }
-    fn(null, null)
-  });
-});
-}
-if(email){
-  Users.findOne({Email: email}).then((user) => {
-  // query the db for the given username
-  if (!user) return fn(null, null)
-
-  
-  // apply the same algorithm to the POSTed password, applying
-  // the hash against the pass / salt, if there is a match we
-  // found the user
-  
-  hash({ password: pass, salt: user.Salt }, function (err, pass, salt, hash) {
-    if (err) return fn(err);
-    if (hash === user.Hash) {
-      
-      return fn(null, user) }
-    fn(null, null)
-  });
-});}
-
-}catch(err){
- console.error('issue with authenticating user', {msg: err});
-}
-};
 
 
 /**
@@ -480,9 +450,7 @@ app.get('/logout', function(req, res){
 
 
 
-app.get('/register', function(req, res){
-  res.render('auth/register');
-});
+
 
 app.post('/api/user/darkmode', function(req, res){
   if(req.session && req.session.user){
@@ -501,61 +469,64 @@ app.post('/api/user/darkmode', function(req, res){
 
 
 
-app.post('/login', function (req, res, next) {
-
-
-  authenticate(req.body.username, req.body.password, req.body.email, function(err, user){
-    if (err) return next(err)
-    if (user) {
-    
-	    
-      // Regenerate session when signing in
-      // to prevent fixation
-	    
-      req.session.regenerate(function(){
-
-        req.session.user = user;
-        req.session.success = 'Authenticated as ' + user.Username;
-        return res.redirect('/');
-      });
-    }
-    else {
-      req.session.error = 'Authentication failed, please check your '
-        + ' username and password.';
-      return res.redirect('/login');
-    }
-        
-    
-    
-  })
-}
-
-
-
-);
-
-
-app.post('/register',  function (req, res, next) {
-  utility.register(req.body.username, req.body.password, req.body.email, req.body.ingameName, req.body.steamId, function(err, user){
-    if (err) {
-      req.session.error = 'Registration failed: ' + err;
-      return res.redirect('/register');
-    }
-    
-    if (user != null) {
-      // Regenerate session when signing in
-      
-      // to prevent fixation
-      req.session.regenerate(function(){
-        req.session.success = 'Registration successful';
-        req.session.user = user;
-        return res.redirect('/');
-      });
-      
-      
-    }
-  });
 });
+
+
+app.post('/register', async (req, res) => {
+  const { username, password, email, ingameName, avatar, steamId } = req.body;
+  try {
+    utility.register(username, password, email, ingameName, steamId, async (err, user) => {
+      if (err) {
+        req.session.error = err.message;
+        return res.redirect('/register');
+      }
+      if (user) {
+        user.Avatar = avatar;
+        await user.save();
+        req.session.user = user;
+        req.session.success = 'User registered successfully';
+        return res.redirect('/login');
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    req.session.error = 'An error occurred during registration';
+    return res.redirect('/register');
+  }
+});
+
+app.get('/register', (req, res) => {
+  res.render('auth/register', { message: req.session.message || '' });
+});
+
+app.get('/login', (req, res) => {
+  res.render('auth/login', { message: req.session.message || '' });
+});
+
+app.post('/login', async (req, res) => {
+  const { username, password, email } = req.body;
+  try {
+    utility.authenticate(username, password, email, (err, user) => {
+      if (err) {
+        req.session.error = err.message;
+        return res.redirect('/login');
+      }
+      if (user) {
+        req.session.user = user;
+        req.session.success = 'User logged in successfully';
+        return res.redirect('/');
+      } else {
+        req.session.error = 'Invalid username, password, or email';
+        return res.redirect('/login');
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    req.session.error = 'An error occurred during login';
+    return res.redirect('/login');
+  }
+});
+
 
 
 

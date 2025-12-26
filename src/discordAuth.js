@@ -2,11 +2,6 @@
 const crypto = require('crypto');
 const storage = require('./storage.js');
 
-
-
-
-
-
 /**
  * Code specific to communicating with the Discord API.
  */

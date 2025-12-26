@@ -4,8 +4,8 @@ const { Routes } = require("discord-api-types/v9");
 //const logtail = new Logtail("XiL5Vq7qxdBP3pYTnLzqkMCX");
 const fs = require("fs");
 
-
-const clientId = "1174703991108677702";  
+require('dotenv').config();
+const clientId = "1318660296658780220";  
 
 module.exports = (client) => {
 	client.handleCommands = async (commandFiles, path) => {
@@ -19,7 +19,7 @@ module.exports = (client) => {
 			}
 		
 
-		const rest = new REST({ version: "9" }).setToken(process.env.D_TOKEN);
+		const rest = new REST({ version: "9" }).setToken(process.env.token);
 		(async () => {
 			try {
 				console.log("[Discord bot]:starting command refresh");

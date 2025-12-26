@@ -7,8 +7,7 @@ const DivisionInfo = new mongoose.Schema({
     Description: {type: String},
     DivisionId: {type: Object},
     Owner: {type: String},
-    
-    Squads: {type: [SquadInfo], default: []}
+    Squads: {type: [], default: []}
 });
 
 //squad template

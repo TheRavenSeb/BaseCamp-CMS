@@ -144,24 +144,58 @@ async function checkAuth(hash, username, email){
   }
 }
 
-async function authenticate(username, password, email, fn) {
-  try {
-    let user = await Users.findOne({Username: username});
-    if(!user) user = await Users.findOne({Email: email});
-    if(!user) return fn('User not found you may not be registered', null);
-    hash({ password: password, salt: user.Salt }, function (err, pass, salt, hash) {
-      if (err) return fn('An error occurred during authentication', null);
-      if (hash === user.Hash) {
-        return fn(null, user);
-      } else {
-        return fn('Invalid password',null);
-      }
-    });
-  } catch (err) {
-    console.log(err);
-    return fn('An error occurred during authentication', null);
-  }
+// Authenticate using our plain-object database of doom!
+/**
+ * 
+ * @param {String} name 
+ * @param {String} pass 
+ * @param {Function} fn 
+ */
+function authenticate(name, pass,email, fn) {
+  try{
+  if (!module.main) console.info('authenticating user', {user: name});
+  if(name){
+  Users.findOne({Username: name}).then((user) => {
+  // query the db for the given username
+  if (!user) return fn(null, null)
+
+  
+  // apply the same algorithm to the POSTed password, applying
+  // the hash against the pass / salt, if there is a match we
+  // found the user
+  
+  hash({ password: pass, salt: user.Salt }, function (err, pass, salt, hash) {
+    if (err) return fn(err);
+    if (hash === user.Hash) {
+      
+      return fn(null, user) }
+    fn(null, null)
+  });
+});
 }
+else if(email){
+  Users.findOne({Email: email}).then((user) => {
+  // query the db for the given username
+  if (!user) return fn(null, null)
+
+  
+  // apply the same algorithm to the POSTed password, applying
+  // the hash against the pass / salt, if there is a match we
+  // found the user
+  
+  hash({ password: pass, salt: user.Salt }, function (err, pass, salt, hash) {
+    if (err) return fn(err);
+    if (hash === user.Hash) {
+      
+      return fn(null, user) }
+    fn(null, null)
+  });
+});}
+
+}catch(err){
+ console.error('issue with authenticating user', {msg: err});
+}
+};
 
 
 module.exports = {

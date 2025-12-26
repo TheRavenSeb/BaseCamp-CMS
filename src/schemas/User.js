@@ -10,7 +10,7 @@
  * @property {string} discordTokens.refresh_token - The refresh token for the user
  * @property {number} discordTokens.expires_in - The expiration time for the access token
  * @property {number} discordTokens.expires_at - The expiration time for the access token in milliseconds
- * @property {object} Units - the units the user in is
+ * @property {Array} Units - the units the user in is
  * 
  */
 
@@ -24,7 +24,7 @@ const User = new Schema({
     Email: {type: String, required: true},
     Hash: {type: String},
     Salt: {type: String},
-    Units: {type: Object},// these are guilds 
+    Units: {type: Array},// these are guilds 
     isDarkmode: {type: Boolean, default: false},
     SteamId: {type: String, default: ""},
     discordTokens: {

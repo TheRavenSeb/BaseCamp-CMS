@@ -1,4 +1,5 @@
 
+
 const mongoose = require('mongoose');
 
 const RpInfo = new mongoose.Schema({
@@ -27,8 +28,10 @@ const Community = new mongoose.Schema({
     GuildId: {type: Object, required: true},
     Owner: {type: String, required: true},
     RankInfo: {type: [RankInfo], default: []},
+    Rank: {type: String, default: ""},
+    Status: {type: String, default: "Active"},
    
-
+    Events: {type: Array, default: []},
     Trainings: {type: Array, default: []},
     UsePoints:{type: Boolean, default: false},
     Points: {type: Number, default: 0},
@@ -36,6 +39,10 @@ const Community = new mongoose.Schema({
     IsRP: {type: Boolean, default: false},
     RpInfo: {type: RpInfo, default: {} },
     MOS: {type: String, default: ""},
+    EventChannel: {type: String, default: null},
+    PromoChannel: {type: String, default: null},
+    
+
 
 });
 
