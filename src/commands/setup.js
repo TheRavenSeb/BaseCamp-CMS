@@ -1,4 +1,4 @@
-const {EmbedBuilder, SlashCommandBuilder} = require('discord.js');
+const {EmbedBuilder, SlashCommandBuilder, ChannelType} = require('discord.js');
 const community = require("../schemas/community.js")
 module.exports = {
   data: new SlashCommandBuilder()
@@ -92,17 +92,17 @@ module.exports = {
 
     if (subcommand === 'auto') {
         
-        community.findOne({ guildId: interaction.guild.id.toString() }).then(Community => {
+        community.findOne({ GuildId: interaction.guild.id.toString() }).then(Community => {
 
             if (Community) {
                 //check is channel creation is needed 
                 if (!Community.EventChannel) {
-                    interaction.guild.channels.create('event-announcements', { type: 'GUILD_TEXT' }).then(channel => {
+                    interaction.guild.channels.create( { name: 'event-announcements', type: ChannelType.GuildText }).then(channel => {
                         Community.EventChannel = channel.id;  
                     });
                 }
                 if (!Community.PromoChannel) {
-                    interaction.guild.channels.create('promo-announcements', { type: 'GUILD_TEXT' }).then(channel => {
+                    interaction.guild.channels.create({ name: "promo-announcements" ,type: ChannelType.GuildText }).then(channel => {
                         Community.PromoChannel = channel.id;
                     });
                 }
@@ -132,10 +132,13 @@ module.exports = {
                         { name: 'Event Channel', value: Community.EventChannel ? `<#${Community.EventChannel}>` : 'No channel set', inline: true },
                         { name: 'Promo Channel', value: Community.PromoChannel ? `<#${Community.PromoChannel}>` : 'No channel set', inline: true }
                     )
-                    .setColor('GREEN');
+                    
+                Community.save();
+
                 interaction.reply({ embeds: [embed] });
             }
         });
+
     } else if (subcommand === 'edit') {
       
         community.findOne({ guildId: interaction.guild.id }).then(Community => {
@@ -153,13 +156,36 @@ module.exports = {
             interaction.reply({ content: 'This server is not registered in the community database.' });
           }
         });      
+
     } else if (subcommand === 'role') {
-      // Role creation logic here
+
+      community.findOne({ guildId: interaction.guild.id }).then(Community => {
+
+        if (Community) {
+          const newRole = {
+            role : role.id,
+            pointValue : parseInt(pointValue) ?? 0
+          };
+          Community.Roles.push(newRole);
+          Community.save();
+          interaction.reply({ content: `Role ${role.name} has been added to the community roles.` });
+        } else {
+          interaction.reply({ content: 'This server is not registered in the community database.' });
+        }
+      });
+
     } else if (subcommand === 'delete') {
-      // Delete setup logic here
-      
-      // confirm deletion
-      // Deletion logic here
+
+      community.findOne({ guildId: interaction.guild.id }).then(Community => {
+        
+        if (Community && deleteSetup) {
+          Community.delete();
+          interaction.reply({ content: 'Community setup has been deleted successfully.' });
+        }
+        else{
+          interaction.reply({ content: 'This server is not registered in the community database.' });
+        }
+      });
     }
   }
 }
